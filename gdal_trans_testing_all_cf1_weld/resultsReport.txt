@@ -1,0 +1,20 @@
+Testing results
+===============
+
+Date: (22/9/2011)
+
+Albers Equal Area: BAD
+ (Loses the 'latitude_of_projection_origin' coord.)
+Azimuthal equidistant: BAD 
+ (missing 'longitude_of_projection_origin' and 'latitude_of_projection_origin')
+Lambert azimuthal equal area:
+Lambert conformal:
+Lambert Cylindrical Equal Area:
+Mercator:
+Orthographic:
+Polar stereographic:
+Rotated pole:
+Stereographic:
+Transverse Mercator:
+Vertical perspective:
+
