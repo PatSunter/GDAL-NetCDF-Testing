@@ -8,3 +8,4 @@ The original dataset is in AEA coordinates.
 3. Translate each of these to NetCDF.
 
 4. Check that all the required attribs from http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.5/apf.html made it across.
+(http://www.unidata.ucar.edu/staff/edavis/notes/WCS/WCS-CRS-Issues.html has a useful list of EPSG codes to help with testing)
