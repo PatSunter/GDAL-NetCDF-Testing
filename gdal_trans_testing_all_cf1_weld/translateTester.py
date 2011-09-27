@@ -2,10 +2,12 @@
 
 import os, sys, subprocess
 import datetime
+import StringIO
 
 origTiff = "CONUS.week01.2010.h10v10.v1.5.Band1_TOA_REF_small.tif"
 outPath = os.path.join(".", "out")
 ncCoOpts = "-co WRITEGDALTAGS=yes"
+# Override value of this variable to use a specific gdal version.
 
 # TODO: for each projection, need to check the coordinate variables 
 # (X and Y) have been created with correct standard_name
@@ -101,7 +103,12 @@ resFile.write(heading)
 resFile.write(len(heading)*"="+"\n")
 
 now = datetime.datetime.now()
-resFile.write("*Date/time:* %s\n\n" % (now.strftime("%Y-%m-%d %H:%M")))
+resFile.write("*Date/time:* %s\n" % (now.strftime("%Y-%m-%d %H:%M")))
+gdalpath = StringIO.StringIO()
+p = subprocess.Popen("which gdal_translate", shell=True, stdout=subprocess.PIPE, 
+    stderr=subprocess.STDOUT)
+resFile.write("*GDAL ver used path:* %s\n" % (p.communicate()[0]))
+resFile.write("\n")
 
 missingAttr = {}
 missingCoordVarStdName = {}
