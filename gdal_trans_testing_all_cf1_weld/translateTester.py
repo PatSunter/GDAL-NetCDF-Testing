@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 import os, sys, subprocess
+from subprocess import PIPE
 import datetime
-import StringIO
 
-origTiff = "CONUS.week01.2010.h10v10.v1.5.Band1_TOA_REF_small.tif"
-outPath = os.path.join(".", "out")
+#Force GDAL tags to be written to make testing easier, with preserved datum etc
 ncCoOpts = "-co WRITEGDALTAGS=yes"
-# Override value of this variable to use a specific gdal version.
 
 # TODO: for each projection, need to check the coordinate variables 
 # (X and Y) have been created with correct standard_name
@@ -20,7 +18,7 @@ ncCoOpts = "-co WRITEGDALTAGS=yes"
 #  4: List of required attributes to define projection
 #  5: List of required coordinate variable standard name attributes
 
-projTuples = [
+PROJ_DEF_TUPLES = [
     ("AEA", "Albers Equal Area", "EPSG:3577", "albers_conical_equal_area",
         ['standard_parallel', 'longitude_of_central_meridian',
          'latitude_of_projection_origin', 'false_easting', 'false_northing'],
@@ -92,74 +90,115 @@ projTuples = [
 #  An effort to _import_ from RP in a NetCDF CF-1 compliant file also seems
 #  to have failed: http://osgeo-org.1803224.n2.nabble.com/Re-rotated-pole-ob-tran-help-needed-td5149504.html
 
-resFName = "translate_results.txt"
-resFile = open(resFName, "w")
+def testGeoTiffToNetCdf(projTuples, outPath, resFilename):
+    """Test a Geotiff file can be converted to NetCDF, and projection in 
+    CF-1 conventions can be successfully maintained. Save results to file.
+    
+    :arg: projTuples - list of tuples
+    :arg: outPath - path to save output
+    :arg: resFilename - results filename to write to.
 
-if not os.path.exists(outPath):
-    os.makedirs(outPath)
+    """
+    resFile = open(os.path.join(outPath, resFilename), "w")
 
-heading = "Testing GDAL translation results to NetCDF\n"
-resFile.write(heading)
-resFile.write(len(heading)*"="+"\n")
+    if not os.path.exists(outPath):
+        os.makedirs(outPath)
 
-now = datetime.datetime.now()
-resFile.write("*Date/time:* %s\n" % (now.strftime("%Y-%m-%d %H:%M")))
-gdalpath = StringIO.StringIO()
-p = subprocess.Popen("which gdal_translate", shell=True, stdout=subprocess.PIPE, 
-    stderr=subprocess.STDOUT)
-resFile.write("*GDAL ver used path:* %s\n" % (p.communicate()[0]))
-resFile.write("\n")
+    heading = "Testing GDAL translation results to NetCDF\n"
+    resFile.write(heading)
+    resFile.write(len(heading)*"="+"\n")
 
-missingAttr = {}
-missingCoordVarStdName = {}
+    now = datetime.datetime.now()
+    resFile.write("*Date/time:* %s\n" % (now.strftime("%Y-%m-%d %H:%M")))
+    p = subprocess.Popen("which gdal_translate", shell=True, stdout=subprocess.PIPE, 
+        stderr=subprocess.STDOUT)
+    resFile.write("*GDAL ver used path:* %s\n" % (p.communicate()[0]))
+    resFile.write("\n")
 
-for proj in projTuples:
-    """Note: current testing strategy is a pretty straightforward search."""
+    resPerProj = {}
 
-    # Our little results data structures
-    transWorked = True
-    missingAttr[proj[0]] = []
-    missingCoordVarStdName[proj[0]] = []
+    for proj in projTuples:
+        # Our little results data structures
+        transWorked = True
 
-    projTiff = os.path.join(outPath, "%s_%s.tif" % (origTiff.rstrip('.tif'), proj[0] ))
-    projOpts = "-a_srs %s" % (proj[2])
-    cmd = " ".join(['gdal_translate', projOpts, origTiff, projTiff])
-    print cmd
-    subprocess.call(cmd, shell=True)
-    print "Translated %s to %s" % (proj[0], projTiff)
-    projNc = os.path.join(outPath, "%s_%s.nc" % (origTiff.rstrip('.tif'), proj[0] ))
-    cmd = " ".join(['gdal_translate', "-of netCDF", ncCoOpts, projTiff, projNc])
-    print cmd
-    subprocess.call(cmd, shell=True)
-    print "Translated to %s" % (projNc)
-    cmd = " ".join(['ncdump -h', projNc, "> %s.ncdump" % (projNc)])
-    subprocess.call(cmd, shell=True)
-    dumpFile = open("%s.ncdump" % (projNc), "r")
+        print "Testing %s (%s) translation:" % (proj[0], proj[1])
+
+        print "About to create GeoTiff in chosen SRS"
+        projTiff = os.path.join(outPath, "%s_%s.tif" % \
+            (origTiff.rstrip('.tif'), proj[0] ))
+        projOpts = "-t_srs %s" % (proj[2])
+        cmd = " ".join(['gdalwarp', projOpts, origTiff, projTiff])
+        print cmd
+        p = subprocess.Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+        p.communicate()
+        print "Warped %s to %s" % (proj[0], projTiff)
+
+        projNc = os.path.join(outPath, "%s_%s.nc" % \
+            (origTiff.rstrip('.tif'), proj[0] ))
+        cmd = " ".join(['gdal_translate', "-of netCDF", ncCoOpts, projTiff,
+            projNc])
+        print "About to translate to NetCDF"
+        print cmd
+        p = subprocess.Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+        p.communicate()
+        print "Translated to %s" % (projNc)
+        
+        projNcDump = "%s.ncdump" % projNc
+        cmd = " ".join(['ncdump -h', projNc, projNcDump])
+        p = subprocess.Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+        p.communicate()
+
+        transWorked, resDetails = testNetcdfValidCF1(proj, projNc, projNcDump)
+        resPerProj[proj[0]] = resDetails
+
+        resFile.write("%s (%s): " % (proj[0], proj[1]))
+        if transWorked:
+            resFile.write("OK\n")
+        else:
+            resFile.write("BAD\n")
+            for attrib in resPerProj[proj[0]]['missingAttrs']:
+                resFile.write("\tMissing attrib '%s'\n" % (attrib))
+            for cVarStdName in resPerProj[proj[0]]['missingCoordVarStdNames']:
+                resFile.write("\tMissing coord var with std name '%s'\n" \
+                    % (cVarStdName))
+
+    resFile.close()
+    print "\n" + "*" * 80
+    print "Saved results to file %s" % resFilename
+
+
+def testNetcdfValidCF1(proj, projNc, dumpFile):
+    """"Test an NC file has valid conventions according to passed-in proj tuple.
+    
+    Note: current testing strategy is a fairly simple attribute search.
+    
+    """
+    transWorked = False
+
+    dumpFile = open(dumpFile, "r")
     dumpStr = dumpFile.read()
+    
+    resDetails = {}
+    resDetails['missingAttrs'] = []
+    resDetails['missingCoordVarStdNames'] = []
     #TODO: check grid mapping name
     for attrib in proj[4]:
         # The ':' prefix and ' ' suffix is to help check for exact name,
         # eg to catch the standard_parallel_1 and 2 issue.
         if (":"+attrib+" ") not in dumpStr:
             transWorked = False
-            missingAttr[proj[0]].append(attrib)
+            resDetails['missingAttrs'].append(attrib)
             print "**Error for proj '%s': CF-1 attrib '%s' not found.**" % \
                 (proj[0], attrib)
     for coordVarStdName in proj[5]:
         if coordVarStdName not in dumpStr:
             transWorked = False
-            missingCoordVarStdName[proj[0]].append(coordVarStdName)
-    resFile.write("%s (%s): " % (proj[0], proj[1]))
-    if transWorked:
-        resFile.write("OK\n")
-    else:
-        resFile.write("BAD\n")
-        for attrib in missingAttr[proj[0]]:
-            resFile.write("\tMissing attrib '%s'\n" % (attrib))
-        for cVarStdName in missingCoordVarStdName[proj[0]]:
-            resFile.write("\tMissing coord var with std name '%s'\n" \
-                % (cVarStdName))
+            resDetails['missingCoordVarStdNames'].append(coordVarStdName)
+    return transWorked, resDetails
 
-resFile.close()
-print "\n" + "*" * 80
-print "Saved results to file %s" % resFName
+if __name__ == "__main__":
+    #origTiff = "CONUS.week01.2010.h10v10.v1.5.Band1_TOA_REF_small.tif"
+    origTiff = "melb-small.tif"
+    outPath = os.path.join(".", "out")
+    resFilename = "translate_results.txt"
+    testGeoTiffToNetCdf(PROJ_DEF_TUPLES, outPath, resFilename)
