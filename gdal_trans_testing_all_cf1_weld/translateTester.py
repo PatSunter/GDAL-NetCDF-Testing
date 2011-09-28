@@ -23,11 +23,18 @@ PROJ_DEF_TUPLES = [
         ['standard_parallel', 'longitude_of_central_meridian',
          'latitude_of_projection_origin', 'false_easting', 'false_northing'],
          ['projection_x_coordinate','projection_y_coordinate']),
-    ("AZE", "Azimuthal Equidistant", "EPSG:54032", "azimuthal_equidistant",
+    ("AZE", "Azimuthal Equidistant",
+        #Didn't have EPSG suitable for AU
+        "+proj=aeqd +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "azimuthal_equidistant",
         ['longitude_of_projection_origin',
          'latitude_of_projection_origin', 'false_easting', 'false_northing'],
          ['projection_x_coordinate','projection_y_coordinate']),
-    ("LAEA", "Lambert azimuthal equal area", "EPSG:2163", "lambert_azimuthal_equal_area",
+    ("LAZEA", "Lambert azimuthal equal area",
+        #Specify proj4 since no approp LAZEA for AU
+        #"+proj=laea +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+        "+proj=laea +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "lambert_azimuthal_equal_area",
         ['longitude_of_projection_origin',
          'latitude_of_projection_origin', 'false_easting', 'false_northing'],
          ['projection_x_coordinate','projection_y_coordinate']),
@@ -47,34 +54,45 @@ PROJ_DEF_TUPLES = [
     ("M-1SP", "Mercator", "EPSG:3832",
         "mercator",
         ['longitude_of_projection_origin',
-         'standard_parallel', # require 1 value in this case
          'scale_factor_at_projection_origin',
          'false_easting', 'false_northing'],
          ['projection_x_coordinate','projection_y_coordinate']),
-    # EPSG 3994 is _supposed_ to be a 2SP according to spatialreference.org,
-    # but GDAL disagrees - and epsg-registry.org seems to support this
-    #("M-2SP", "Mercator", "EPSG:3994",
+    # Commented out as it seems GDAL itself's support of Mercator with 2SP
+    #  is a bit dodgy
+    #("M-2SP", "Mercator",
+    #    "+proj=merc +lat_ts=-18 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
     #    "mercator",
     #    ['longitude_of_projection_origin',
     #     'standard_parallel', # require 2 values
     #     'false_easting', 'false_northing'],
-    #     ['projection_x_coordinate','projection_y_coordinate'])
-    #("Ortho", "Orthographic", "EPSG:?",
-    #    "orthographic",
-    #    ['longitude_of_projection_origin',
-    #     'latitude_of_projection_origin',
-    #     'false_easting', 'false_northing'],
-    #     ['projection_x_coordinate', 'projection_y_coordinate']),
+    #     ['projection_x_coordinate','projection_y_coordinate']),
+    ("Ortho", "Orthographic",
+        "+proj=ortho +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "orthographic",
+        ['longitude_of_projection_origin',
+         'latitude_of_projection_origin',
+         'false_easting', 'false_northing'],
+         ['projection_x_coordinate', 'projection_y_coordinate']),
     # Seems GDAL may have problems with Polar stereographic, as it 
     #  considers these "local coordinate systems"
-    #("PS", "Polar stereographic", "EPSG:3031",
-    #    "polar_stereographic",
-    #    ['straight_vertical_longitude_from_pole',
-    #    'latitude_of_projection_origin',
-    #     'scale_factor_at_projection_origin', # OR 'standard_parallel', 
-    #     'false_easting', 'false_northing'],
-    #     ['projection_x_coordinate', 'projection_y_coordinate']),
-    ("TM", "Transverse Mercator", "EPSG:2000",
+    ("PSt", "Polar stereographic",
+        "+proj=stere +lat_ts=0 +lat_0=-90 +lon_0=134 +k_0=1.0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "polar_stereographic",
+        ['straight_vertical_longitude_from_pole',
+        'latitude_of_projection_origin',
+         'scale_factor_at_projection_origin',
+         'false_easting', 'false_northing'],
+         ['projection_x_coordinate', 'projection_y_coordinate']),
+    ("St", "Stereographic",
+        "+proj=stere +lat_0=-37 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "stereographic",
+        ['longitude_of_projection_origin',
+        'latitude_of_projection_origin',
+         'scale_factor_at_projection_origin',
+         'false_easting', 'false_northing'],
+         ['projection_x_coordinate', 'projection_y_coordinate']),
+    #Note: Rotated Pole not in this list, as seems not GDAL-supported
+    ("TM", "Transverse Mercator", "EPSG:32655", #UTM Zone 55N
         "transverse_mercator",
         [
          'scale_factor_at_central_meridian',
@@ -90,7 +108,7 @@ PROJ_DEF_TUPLES = [
 #  An effort to _import_ from RP in a NetCDF CF-1 compliant file also seems
 #  to have failed: http://osgeo-org.1803224.n2.nabble.com/Re-rotated-pole-ob-tran-help-needed-td5149504.html
 
-def testGeoTiffToNetCdf(projTuples, outPath, resFilename):
+def testGeoTiffToNetCdf(projTuples, origTiff, outPath, resFilename):
     """Test a Geotiff file can be converted to NetCDF, and projection in 
     CF-1 conventions can be successfully maintained. Save results to file.
     
@@ -99,6 +117,8 @@ def testGeoTiffToNetCdf(projTuples, outPath, resFilename):
     :arg: resFilename - results filename to write to.
 
     """
+    if not os.path.exists(outPath):
+        os.makedirs(outPath)
     resFile = open(os.path.join(outPath, resFilename), "w")
 
     if not os.path.exists(outPath):
@@ -119,14 +139,13 @@ def testGeoTiffToNetCdf(projTuples, outPath, resFilename):
 
     for proj in projTuples:
         # Our little results data structures
-        transWorked = True
 
         print "Testing %s (%s) translation:" % (proj[0], proj[1])
 
         print "About to create GeoTiff in chosen SRS"
         projTiff = os.path.join(outPath, "%s_%s.tif" % \
             (origTiff.rstrip('.tif'), proj[0] ))
-        projOpts = "-t_srs %s" % (proj[2])
+        projOpts = "-t_srs '%s'" % (proj[2])
         cmd = " ".join(['gdalwarp', projOpts, origTiff, projTiff])
         print cmd
         p = subprocess.Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
@@ -144,7 +163,7 @@ def testGeoTiffToNetCdf(projTuples, outPath, resFilename):
         print "Translated to %s" % (projNc)
         
         projNcDump = "%s.ncdump" % projNc
-        cmd = " ".join(['ncdump -h', projNc, projNcDump])
+        cmd = " ".join(['ncdump -h', projNc, ">", projNcDump])
         p = subprocess.Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
         p.communicate()
 
@@ -164,7 +183,7 @@ def testGeoTiffToNetCdf(projTuples, outPath, resFilename):
 
     resFile.close()
     print "\n" + "*" * 80
-    print "Saved results to file %s" % resFilename
+    print "Saved results to file %s" % (os.path.join(outPath, resFilename))
 
 
 def testNetcdfValidCF1(proj, projNc, dumpFile):
@@ -173,7 +192,7 @@ def testNetcdfValidCF1(proj, projNc, dumpFile):
     Note: current testing strategy is a fairly simple attribute search.
     
     """
-    transWorked = False
+    transWorked = True
 
     dumpFile = open(dumpFile, "r")
     dumpStr = dumpFile.read()
@@ -198,7 +217,12 @@ def testNetcdfValidCF1(proj, projNc, dumpFile):
 
 if __name__ == "__main__":
     #origTiff = "CONUS.week01.2010.h10v10.v1.5.Band1_TOA_REF_small.tif"
-    origTiff = "melb-small.tif"
-    outPath = os.path.join(".", "out")
+    #outPath = os.path.join(".", "out")
+    #origTiff = "melb-small.tif"
+    if len(sys.argv) != 3:
+        print "Usage: %s origTiff outPath" % (sys.argv[0])
+        sys.exit(1)
+    origTiff = sys.argv[1]
+    outPath = sys.argv[2]
     resFilename = "translate_results.txt"
-    testGeoTiffToNetCdf(PROJ_DEF_TUPLES, outPath, resFilename)
+    testGeoTiffToNetCdf(PROJ_DEF_TUPLES, origTiff, outPath, resFilename)
