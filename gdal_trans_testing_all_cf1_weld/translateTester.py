@@ -25,7 +25,7 @@ PROJ_DEF_TUPLES = [
          ['projection_x_coordinate','projection_y_coordinate']),
     ("AZE", "Azimuthal Equidistant",
         #Didn't have EPSG suitable for AU
-        "+proj=aeqd +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "+proj=aeqd +lat_0=-37 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
         "azimuthal_equidistant",
         ['longitude_of_projection_origin',
          'latitude_of_projection_origin', 'false_easting', 'false_northing'],
@@ -33,7 +33,7 @@ PROJ_DEF_TUPLES = [
     ("LAZEA", "Lambert azimuthal equal area",
         #Specify proj4 since no approp LAZEA for AU
         #"+proj=laea +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
-        "+proj=laea +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "+proj=laea +lat_0=-37 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
         "lambert_azimuthal_equal_area",
         ['longitude_of_projection_origin',
          'latitude_of_projection_origin', 'false_easting', 'false_northing'],
@@ -43,8 +43,8 @@ PROJ_DEF_TUPLES = [
          'longitude_of_central_meridian',
          'latitude_of_projection_origin', 'false_easting', 'false_northing'],
          ['projection_x_coordinate','projection_y_coordinate']),
-    ("LCEA", "Lambert Cylindrical Equal Area", "EPSG:3410",
-        #Is "Cylindrical_Equal_Area" in WKT
+    ("LCEA", "Lambert Cylindrical Equal Area",
+        "+proj=cea +lat_ts=-37 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
         "lambert_cylindrical_equal_area",
         ['longitude_of_central_meridian',
          'standard_parallel', # TODO: OR 'scale_factor_at_projection_origin' 
@@ -59,15 +59,18 @@ PROJ_DEF_TUPLES = [
          ['projection_x_coordinate','projection_y_coordinate']),
     # Commented out as it seems GDAL itself's support of Mercator with 2SP
     #  is a bit dodgy
-    #("M-2SP", "Mercator",
-    #    "+proj=merc +lat_ts=-18 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
-    #    "mercator",
-    #    ['longitude_of_projection_origin',
-    #     'standard_parallel', # require 2 values
-    #     'false_easting', 'false_northing'],
-    #     ['projection_x_coordinate','projection_y_coordinate']),
+    ("M-2SP", "Mercator",
+        #GDAL Doesn't seem to recognise proj4 string properly for 2SP
+        #"+proj=merc +lat_ts=-45 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        # Trying with full WKT:
+        """PROJCS["unnamed", GEOGCS["WGS 84", DATUM["WGS_1984", SPHEROID["WGS 84",6378137,298.257223563, AUTHORITY["EPSG","7030"]], AUTHORITY["EPSG","6326"]], PRIMEM["Greenwich",0], UNIT["degree",0.0174532925199433], AUTHORITY["EPSG","4326"]], PROJECTION["Mercator_2SP"], PARAMETER["central_meridian",146], PARAMETER["standard_parallel_1",-45], PARAMETER["latitude_of_origin",0], PARAMETER["false_easting",0], PARAMETER["false_northing",0], UNIT["metre",1, AUTHORITY["EPSG","9001"]]]""",
+        "mercator",
+        ['longitude_of_projection_origin',
+         'standard_parallel',   #2 values?
+         'false_easting', 'false_northing'],
+         ['projection_x_coordinate','projection_y_coordinate']),
     ("Ortho", "Orthographic",
-        "+proj=ortho +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "+proj=ortho +lat_0=-37 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
         "orthographic",
         ['longitude_of_projection_origin',
          'latitude_of_projection_origin',
@@ -76,7 +79,7 @@ PROJ_DEF_TUPLES = [
     # Seems GDAL may have problems with Polar stereographic, as it 
     #  considers these "local coordinate systems"
     ("PSt", "Polar stereographic",
-        "+proj=stere +lat_ts=0 +lat_0=-90 +lon_0=134 +k_0=1.0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "+proj=stere +lat_ts=-37 +lat_0=-90 +lon_0=145 +k_0=1.0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
         "polar_stereographic",
         ['straight_vertical_longitude_from_pole',
         'latitude_of_projection_origin',
@@ -84,7 +87,7 @@ PROJ_DEF_TUPLES = [
          'false_easting', 'false_northing'],
          ['projection_x_coordinate', 'projection_y_coordinate']),
     ("St", "Stereographic",
-        "+proj=stere +lat_0=-37 +lon_0=134 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "+proj=stere +lat_0=-37 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
         "stereographic",
         ['longitude_of_projection_origin',
         'latitude_of_projection_origin',
