@@ -38,11 +38,12 @@ PROJ_DEF_TUPLES = [
         ['longitude_of_projection_origin',
          'latitude_of_projection_origin', 'false_easting', 'false_northing'],
          ['projection_x_coordinate','projection_y_coordinate']),
-    ("LC", "Lambert conformal", "EPSG:3112", "lambert_conformal_conic",
-        ['standard_parallel', # TODO: with 1 or 2 values allowed, checking?
+    ("LC_2SP", "Lambert conformal", "EPSG:3112", "lambert_conformal_conic",
+        ['standard_parallel',
          'longitude_of_central_meridian',
          'latitude_of_projection_origin', 'false_easting', 'false_northing'],
          ['projection_x_coordinate','projection_y_coordinate']),
+    # TODO: Test LCC with 1SP
     ("LCEA", "Lambert Cylindrical Equal Area",
         "+proj=cea +lat_ts=-37 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
         "lambert_cylindrical_equal_area",
@@ -51,7 +52,9 @@ PROJ_DEF_TUPLES = [
          'false_easting', 'false_northing'],
          ['projection_x_coordinate','projection_y_coordinate']),
     # 2 entries for Mercator, since attribs different for 1SP or 2SP
-    ("M-1SP", "Mercator", "EPSG:3832",
+    ("M-1SP", "Mercator",
+        "+proj=merc +lon_0=145 +k_0=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        
         "mercator",
         ['longitude_of_projection_origin',
          'scale_factor_at_projection_origin',
@@ -60,10 +63,11 @@ PROJ_DEF_TUPLES = [
     # Commented out as it seems GDAL itself's support of Mercator with 2SP
     #  is a bit dodgy
     ("M-2SP", "Mercator",
+        #"ESPG:3388", # As suggested by http://trac.osgeo.org/gdal/ticket/2744
         #GDAL Doesn't seem to recognise proj4 string properly for 2SP
-        #"+proj=merc +lat_ts=-45 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        "+proj=merc +lat_ts=-45 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
         # Trying with full WKT:
-        """PROJCS["unnamed", GEOGCS["WGS 84", DATUM["WGS_1984", SPHEROID["WGS 84",6378137,298.257223563, AUTHORITY["EPSG","7030"]], AUTHORITY["EPSG","6326"]], PRIMEM["Greenwich",0], UNIT["degree",0.0174532925199433], AUTHORITY["EPSG","4326"]], PROJECTION["Mercator_2SP"], PARAMETER["central_meridian",146], PARAMETER["standard_parallel_1",-45], PARAMETER["latitude_of_origin",0], PARAMETER["false_easting",0], PARAMETER["false_northing",0], UNIT["metre",1, AUTHORITY["EPSG","9001"]]]""",
+        #"""PROJCS["unnamed", GEOGCS["WGS 84", DATUM["WGS_1984", SPHEROID["WGS 84",6378137,298.257223563, AUTHORITY["EPSG","7030"]], AUTHORITY["EPSG","6326"]], PRIMEM["Greenwich",0], UNIT["degree",0.0174532925199433], AUTHORITY["EPSG","4326"]], PROJECTION["Mercator_2SP"], PARAMETER["central_meridian",146], PARAMETER["standard_parallel_1",-45], PARAMETER["latitude_of_origin",0], PARAMETER["false_easting",0], PARAMETER["false_northing",0], UNIT["metre",1, AUTHORITY["EPSG","9001"]]]""",
         "mercator",
         ['longitude_of_projection_origin',
          'standard_parallel',   #2 values?
@@ -87,7 +91,8 @@ PROJ_DEF_TUPLES = [
          'false_easting', 'false_northing'],
          ['projection_x_coordinate', 'projection_y_coordinate']),
     ("St", "Stereographic",
-        "+proj=stere +lat_0=-37 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        #"+proj=stere +lat_0=-37 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+        'PROJCS["unnamed", GEOGCS["WGS 84", DATUM["WGS_1984", SPHEROID["WGS 84",6378137,298.257223563, AUTHORITY["EPSG","7030"]], AUTHORITY["EPSG","6326"]], PRIMEM["Greenwich",0], UNIT["degree",0.0174532925199433], AUTHORITY["EPSG","4326"]], PROJECTION["Stereographic"], PARAMETER["latitude_of_origin",-37.5], PARAMETER["central_meridian",145], PARAMETER["scale_factor",1], PARAMETER["false_easting",0], PARAMETER["false_northing",0], UNIT["metre",1, AUTHORITY["EPSG","9001"]]]',
         "stereographic",
         ['longitude_of_projection_origin',
         'latitude_of_projection_origin',
@@ -178,6 +183,9 @@ def testGeoTiffToNetCdf(projTuples, origTiff, outPath, resFilename):
             resFile.write("OK\n")
         else:
             resFile.write("BAD\n")
+            if 'missingProjName' in resPerProj[proj[0]]:
+                resFile.write("\tMissing proj name '%s'\n" % \
+                    (resPerProj[proj[0]]['missingProjName']))
             for attrib in resPerProj[proj[0]]['missingAttrs']:
                 resFile.write("\tMissing attrib '%s'\n" % (attrib))
             for cVarStdName in resPerProj[proj[0]]['missingCoordVarStdNames']:
@@ -204,6 +212,9 @@ def testNetcdfValidCF1(proj, projNc, dumpFile):
     resDetails['missingAttrs'] = []
     resDetails['missingCoordVarStdNames'] = []
     #TODO: check grid mapping name
+    if (':grid_mapping_name = "%s"' % (proj[3])) not in dumpStr:
+        transWorked = False
+        resDetails['missingProjName'] = proj[3]
     for attrib in proj[4]:
         # The ':' prefix and ' ' suffix is to help check for exact name,
         # eg to catch the standard_parallel_1 and 2 issue.
