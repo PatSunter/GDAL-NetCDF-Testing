@@ -1,0 +1,29 @@
+
+Positives:
+ - Got both AEA (Albers Equal Area) and LC (Lambert Conformal) to 
+   reproject properly for a Melb test dataset (EPSG:3112 and EPSG:3577)
+
+
+Key points:
+
+ :CF-1 conventions seem to use consistently different params:
+ Lats:
+ - 'latitude_of_projection_origin' instead of 'latitude_of_center' (in WKT)
+ Lons:
+ - 'longitude_of_projection_origin' instead of 'longitude_of_center'
+     (In many cases, sometimes WKT also uses proj origin)
+ - Also, 'longitude_of_central_meridian' (for AEA) also used instead of 'longitude_of_center' sometimes.
+    (Qtn: are the above 2 used in exactly the same meaning?)
+
+So: for longitude_of_center, it seems there is no universal translation when
+ exporting to NetCDF: sometimes we need to map to 
+ 'longitude_of_central_meridian', whereas sometimes 'longitude_of_projection_origin'
+
+This seems to mean going beyond the current oNetcdfSRS lookup table: 
+ perhaps with a separate translation table per-projection (IE a 2D 'ragged' array ... can this be defined in the header in C++?)
+ - Arguably this is slightly more maintenance, but at least its explicit! 
+   And will support clearer debugging/testing of the separate projections.
+ - AND: also usable for import/export.  
+
+(Or alternative is special cases just for these problematic variables
+... as with standard_parallel stuff)
