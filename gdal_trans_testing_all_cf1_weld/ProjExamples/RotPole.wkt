@@ -1,0 +1,14 @@
+PROJCS["Plate_Carree",
+     GEOGCS["unnamed ellipse",
+         DATUM["D_unknown",
+             SPHEROID["Unknown",6371000,0]],
+         PRIMEM["Greenwich",0],
+         UNIT["Degree",0.017453292519943295]],
+     PROJECTION["Plate_Carree"],
+     PARAMETER["latitude_of_origin",0],
+     PARAMETER["central_meridian",-40],
+     PARAMETER["false_easting",639367],
+     PARAMETER["false_northing",1473324],
+     EXTENSION["PROJ4","+proj=ob_tran +o_proj=eqc +lon_0=-40 +o_lat_p=22 
++x_0=639367 +y_0=1473324 +a=6371000 +b=6371000 +wktext"],
+     UNIT["Meter",1]]
