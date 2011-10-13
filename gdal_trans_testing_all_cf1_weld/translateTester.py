@@ -63,11 +63,7 @@ PROJ_DEF_TUPLES = [
     # Commented out as it seems GDAL itself's support of Mercator with 2SP
     #  is a bit dodgy
     ("M-2SP", "Mercator",
-        #"ESPG:3388", # As suggested by http://trac.osgeo.org/gdal/ticket/2744
-        #GDAL Doesn't seem to recognise proj4 string properly for 2SP
-        "+proj=merc +lat_ts=-45 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
-        # Trying with full WKT:
-        #"""PROJCS["unnamed", GEOGCS["WGS 84", DATUM["WGS_1984", SPHEROID["WGS 84",6378137,298.257223563, AUTHORITY["EPSG","7030"]], AUTHORITY["EPSG","6326"]], PRIMEM["Greenwich",0], UNIT["degree",0.0174532925199433], AUTHORITY["EPSG","4326"]], PROJECTION["Mercator_2SP"], PARAMETER["central_meridian",146], PARAMETER["standard_parallel_1",-45], PARAMETER["latitude_of_origin",0], PARAMETER["false_easting",0], PARAMETER["false_northing",0], UNIT["metre",1, AUTHORITY["EPSG","9001"]]]""",
+        "+proj=merc +lat_ts=-37 +lon_0=145 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
         "mercator",
         ['longitude_of_projection_origin',
          'standard_parallel',   #2 values?
@@ -116,7 +112,10 @@ PROJ_DEF_TUPLES = [
 #  An effort to _import_ from RP in a NetCDF CF-1 compliant file also seems
 #  to have failed: http://osgeo-org.1803224.n2.nabble.com/Re-rotated-pole-ob-tran-help-needed-td5149504.html
 
-def testGeoTiffToNetCdf(projTuples, origTiff, outPath, resFilename):
+# Mapping GDAL format names to extensions
+formats = {"hfa":"img", "GTiff":"tif", "JPEG":"jpg"}
+
+def testGeoTiffToNetCdf(projTuples, origTiff, intForm, outPath, resFilename):
     """Test a Geotiff file can be converted to NetCDF, and projection in 
     CF-1 conventions can be successfully maintained. Save results to file.
     
@@ -125,6 +124,8 @@ def testGeoTiffToNetCdf(projTuples, origTiff, outPath, resFilename):
     :arg: resFilename - results filename to write to.
 
     """
+    intExt = formats[intForm]
+
     if not os.path.exists(outPath):
         os.makedirs(outPath)
     resFile = open(os.path.join(outPath, resFilename), "w")
@@ -150,19 +151,20 @@ def testGeoTiffToNetCdf(projTuples, origTiff, outPath, resFilename):
 
         print "Testing %s (%s) translation:" % (proj[0], proj[1])
 
-        print "About to create GeoTiff in chosen SRS"
-        projTiff = os.path.join(outPath, "%s_%s.tif" % \
-            (origTiff.rstrip('.tif'), proj[0] ))
+        print "About to create raster in chosen SRS"
+        projRaster = os.path.join(outPath, "%s_%s.%s" % \
+            (origTiff.rstrip('.tif'), proj[0], intExt ))
         projOpts = "-t_srs '%s'" % (proj[2])
-        cmd = " ".join(['gdalwarp', projOpts, origTiff, projTiff])
+        formOpts = "-of %s" % intForm
+        cmd = " ".join(['gdalwarp', projOpts, formOpts, origTiff, projRaster])
         print cmd
         p = subprocess.Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
         p.communicate()
-        print "Warped %s to %s" % (proj[0], projTiff)
+        print "Warped %s to %s" % (proj[0], projRaster)
 
         projNc = os.path.join(outPath, "%s_%s.nc" % \
             (origTiff.rstrip('.tif'), proj[0] ))
-        cmd = " ".join(['gdal_translate', "-of netCDF", ncCoOpts, projTiff,
+        cmd = " ".join(['gdal_translate', "-of netCDF", ncCoOpts, projRaster,
             projNc])
         print "About to translate to NetCDF"
         print cmd
@@ -233,10 +235,11 @@ if __name__ == "__main__":
     #origTiff = "CONUS.week01.2010.h10v10.v1.5.Band1_TOA_REF_small.tif"
     #outPath = os.path.join(".", "out")
     #origTiff = "melb-small.tif"
-    if len(sys.argv) != 3:
-        print "Usage: %s origTiff outPath" % (sys.argv[0])
+    if len(sys.argv) != 4:
+        print "Usage: %s origTiff intForm outPath" % (sys.argv[0])
         sys.exit(1)
     origTiff = sys.argv[1]
-    outPath = sys.argv[2]
+    intForm = sys.argv[2]
+    outPath = sys.argv[3]
     resFilename = "translate_results.txt"
-    testGeoTiffToNetCdf(PROJ_DEF_TUPLES, origTiff, outPath, resFilename)
+    testGeoTiffToNetCdf(PROJ_DEF_TUPLES, origTiff, intForm, outPath, resFilename)
