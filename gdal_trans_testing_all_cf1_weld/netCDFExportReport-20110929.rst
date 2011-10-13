@@ -63,7 +63,8 @@ PARAMETER["longitude_of_center",145],       longitude_of_projection_origin=145
 Lambert conformal - 2SP: OK
 ---------------------------
 
-(Note: need variants with both 1SP or 2SP?)
+(Note: CF suggests we need variants with both 1SP or 2SP?)
+(Does OGC LCC 1SP map to Lambert conformal in CF-1 with just one SP listed?)
 
 *CF-1 compliance?:* YES
 *Loads in IDV?*: YES
@@ -245,8 +246,6 @@ string asking for regular stereographic.
 *Loads in IDV?*: Loads, but details don't show properly. Possibly because of GDAL Ortho_Stereographic compared to stereographic test.
 
 Notes:
- - need "central_meridian" -> 'longitude_of_projection_origin'
- - need 'scale_factor' -> 'scale_factor_at_projection_origin'
 
 =========================================== ===============================================
 GDAL:                                       CF-1 Equivalents
@@ -267,6 +266,7 @@ Transverse Mercator: OK
 GDAL:                                       CF-1 Equivalents
 =========================================== ===============================================
 PROJECTION["Transverse_Mercator"],          grid_mapping_name=transverse_mercator
-PARAMETER["latitude_of_origin",0],          latitude_of_projection_origin=0
+PARAMETER["scale_factor",1],                scale_factor_at_central_meridian=1
 PARAMETER["central_meridian",147],          longitude_of_central_meridian=147
+PARAMETER["latitude_of_origin",0],          latitude_of_projection_origin=0
 =========================================== ===============================================
