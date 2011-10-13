@@ -1,0 +1,45 @@
+
+In PDS's patched code:
+----------------------
+
+In ogr/ogr_srs_esri.cpp
+
+Line 1221: before remap
+ *GetAttrNode( "PROJCS" )->papoChildNodes[4]->papoChildNodes[0]
+$33 = {pszValue = 0x80719e8 "central_meridian", papoChildNodes = 0x0, 
+  poParent = 0x80719a8, nChildren = 0} 
+
+Line 1223: after remap:
+$34 = {pszValue = 0x80719e8 "Longitude_Of_Center", papoChildNodes = 0x0, 
+  poParent = 0x80719a8, nChildren = 0}
+
+
+In old code:
+------------
+
+Remapping seems to occur in RemapPNamesBasedOnProjCSAndPName()
+
+based on a 'mappingTable' input var.
+
+Ah - in ogr_srs_esri_names.h, there is an ogr_srs_esri_names mapping table,
+apszParamNameMapping[] (line 207), that contains:
+"Orthographic", "central_meridian", "Longitude_Of_Center",
+"Orthographic", "latitude_of_origin", "Latitude_Of_Center",
+
+So why isn't this used in import also??
+
+Summary notes on this approach:
+-------------------------------
+
+(In case useful for NetCDF driver)
+
+ 1) Copy all parameters across from OGC WKT
+ 2) Loop through, and for particular projections that involve any advanced
+    refactorings, (eg LCC), apply these
+ 3) As a final check:
+    * Apply a standard set of remappings of attrib names
+    * Apply a standard set of remappings of values (eg roundings etc)
+
+Hmmm ... it does work and cut down amount of code - but has some potentially
+ dodgy aspects as well it seems (e.g. for reversing, seems they forgot to
+ apply these remappings)

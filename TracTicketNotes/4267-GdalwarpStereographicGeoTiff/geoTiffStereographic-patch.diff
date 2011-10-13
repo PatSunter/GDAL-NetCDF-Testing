@@ -1,0 +1,13 @@
+Index: frmts/gtiff/gt_wkt_srs.cpp
+===================================================================
+--- frmts/gtiff/gt_wkt_srs.cpp	(revision 23197)
++++ frmts/gtiff/gt_wkt_srs.cpp	(working copy)
+@@ -702,7 +702,7 @@
+             break;
+ 
+           case CT_Stereographic:
+-            oSRS.SetOS( adfParm[0], adfParm[1],
++            oSRS.SetStereographic( adfParm[0], adfParm[1],
+                         adfParm[4],
+                         adfParm[5], adfParm[6] );
+             break;
