@@ -5,7 +5,7 @@ from subprocess import PIPE
 import datetime
 
 #Force GDAL tags to be written to make testing easier, with preserved datum etc
-ncCoOpts = "-co WRITEGDALTAGS=yes"
+ncCoOpts = "-co WRITE_GDAL_TAGS=yes"
 
 # TODO: for each projection, need to check the coordinate variables 
 # (X and Y) have been created with correct standard_name
