@@ -1,0 +1,9 @@
+Input file size is 8121, 7121
+0TMP ET options filetype=1 compress=0 zlevel=1
+...10...20...30...40...50...60...70...80...90...100 - done.
+Input file size is 8121, 7121
+0TMP ET options filetype=4 compress=2 zlevel=1
+...10...20...30...40...50...60...70...80...90...100 - done.
+Input file size is 8121, 7121
+0TMP ET options filetype=4 compress=2 zlevel=9
+...10...20...30...40...50...60...70...80...90...100 - done.
