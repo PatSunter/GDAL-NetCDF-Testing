@@ -1,0 +1,35 @@
+Driver: GTiff/GeoTIFF
+Files: L71092086_08620110129_B10.TIF
+Size is 8121, 7121
+Coordinate System is:
+PROJCS["WGS 84 / UTM zone 55N",
+    GEOGCS["WGS 84",
+        DATUM["WGS_1984",
+            SPHEROID["WGS 84",6378137,298.257223563,
+                AUTHORITY["EPSG","7030"]],
+            AUTHORITY["EPSG","6326"]],
+        PRIMEM["Greenwich",0],
+        UNIT["degree",0.0174532925199433],
+        AUTHORITY["EPSG","4326"]],
+    PROJECTION["Transverse_Mercator"],
+    PARAMETER["latitude_of_origin",0],
+    PARAMETER["central_meridian",147],
+    PARAMETER["scale_factor",0.9996],
+    PARAMETER["false_easting",500000],
+    PARAMETER["false_northing",0],
+    UNIT["metre",1,
+        AUTHORITY["EPSG","9001"]],
+    AUTHORITY["EPSG","32655"]]
+Origin = (281384.999999999941792,-4040684.999999999534339)
+Pixel Size = (30.000000000000000,-30.000000000000000)
+Metadata:
+  AREA_OR_POINT=Point
+Image Structure Metadata:
+  INTERLEAVE=BAND
+Corner Coordinates:
+Upper Left  (  281385.000,-4040685.000) (144d33'34.28"E, 36d29'11.56"S)
+Lower Left  (  281385.000,-4254315.000) (144d29'46.21"E, 38d24'37.27"S)
+Upper Right (  525015.000,-4040685.000) (147d16'45.71"E, 36d30'40.26"S)
+Lower Right (  525015.000,-4254315.000) (147d17'11.85"E, 38d26'12.33"S)
+Center      (  403200.000,-4147500.000) (145d54'19.15"E, 37d28' 9.55"S)
+Band 1 Block=8121x1 Type=Byte, ColorInterp=Gray
